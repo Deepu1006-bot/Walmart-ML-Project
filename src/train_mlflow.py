@@ -1,150 +1,124 @@
 import os
-import json
 import joblib
 import numpy as np
-import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
 
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import (
-    accuracy_score,
-    precision_score,
-    recall_score,
-    f1_score,
-    roc_auc_score,
-    ConfusionMatrixDisplay,
-    RocCurveDisplay
+    mean_absolute_error,
+    mean_squared_error,
+    r2_score
 )
 
-def train_and_track(run_name="RandomForest_Baseline", params=None):
+
+def train_and_track(
+    run_name="RandomForest_Baseline",
+    params=None
+):
+
     if params is None:
         params = {
             "n_estimators": 100,
-            "max_depth": 10,
             "random_state": 42,
-            "class_weight": "balanced"
+            "n_jobs": -1
         }
 
     print(f"\n--- Starting MLflow Run: {run_name} ---")
 
-    # 1. Load Data
-    X_train = np.load('data/processed/X_train_final.npy')
-    X_test = np.load('data/processed/X_test_final.npy')
-    y_train = np.load('data/processed/y_train.npy')
-    y_test = np.load('data/processed/y_test.npy')
+    # Load processed data
+    X_train = np.load("data/processed/X_train.npy")
+    X_test = np.load("data/processed/X_test.npy")
+    y_train = np.load("data/processed/y_train.npy")
+    y_test = np.load("data/processed/y_test.npy")
 
-    # Set Experiment
-    mlflow.set_experiment("Telco_Churn_Prediction")
+    # MLflow experiment
+    mlflow.set_experiment("Walmart_Weekly_Sales_Prediction")
 
     with mlflow.start_run(run_name=run_name):
-        # 2. Log Parameters
-        mlflow.log_params(params)
-        mlflow.log_param("model_family", "RandomForest")
 
-        # 3. Train Model
-        model = RandomForestClassifier(**params)
+        # Log parameters
+        mlflow.log_params(params)
+        mlflow.log_param(
+            "model_family",
+            "RandomForestRegressor"
+        )
+
+        # Train model
+        model = RandomForestRegressor(**params)
+
         model.fit(X_train, y_train)
 
-        # 4. Evaluate Predictions
+        # Prediction
         y_pred = model.predict(X_test)
-        y_prob = model.predict_proba(X_test)[:, 1]
+
+        # Metrics
+        mae = mean_absolute_error(y_test, y_pred)
+        mse = mean_squared_error(y_test, y_pred)
+        rmse = np.sqrt(mse)
+        r2 = r2_score(y_test, y_pred)
 
         metrics = {
-            "accuracy": accuracy_score(y_test, y_pred),
-            "precision": precision_score(y_test, y_pred),
-            "recall": recall_score(y_test, y_pred),
-            "f1_score": f1_score(y_test, y_pred),
-            "roc_auc": roc_auc_score(y_test, y_prob)
+            "MAE": mae,
+            "MSE": mse,
+            "RMSE": rmse,
+            "R2": r2
         }
 
-        # 5. Log Metrics to MLflow
+        # Log metrics
         mlflow.log_metrics(metrics)
-        print(f"Metrics logged: F1 = {metrics['f1_score']:.4f} | ROC-AUC = {metrics['roc_auc']:.4f}")
 
-        # 6. Generate and Log Diagnostic Plots
-        os.makedirs("artifacts", exist_ok=True)
+        print(f"MAE  : {mae:.4f}")
+        print(f"MSE  : {mse:.4f}")
+        print(f"RMSE : {rmse:.4f}")
+        print(f"R2   : {r2:.4f}")
 
-        # Confusion Matrix
-        fig_cm, ax_cm = plt.subplots(figsize=(6, 5))
-        ConfusionMatrixDisplay.from_predictions(y_test, y_pred, ax=ax_cm, cmap="Blues")
-        ax_cm.set_title(f"Confusion Matrix - {run_name}")
-        cm_path = "artifacts/confusion_matrix.png"
-        fig_cm.savefig(cm_path, bbox_inches="tight")
-        plt.close(fig_cm)
-        mlflow.log_artifact(cm_path, artifact_path="plots")
+        # Log metadata
+        metadata_path = "data/processed/dataset_metadata.json"
 
-        # ROC Curve
-        fig_roc, ax_roc = plt.subplots(figsize=(6, 5))
-        RocCurveDisplay.from_predictions(y_test, y_prob, ax=ax_roc)
-        ax_roc.set_title(f"ROC Curve - {run_name}")
-        roc_path = "artifacts/roc_curve.png"
-        fig_roc.savefig(roc_path, bbox_inches="tight")
-        plt.close(fig_roc)
-        mlflow.log_artifact(roc_path, artifact_path="plots")
+        if os.path.exists(metadata_path):
+            mlflow.log_artifact(
+                metadata_path,
+                artifact_path="metadata"
+            )
 
-        # 7. Log Preprocessing Metadata for Lineage
-        if os.path.exists('data/processed/dataset_metadata.json'):
-            mlflow.log_artifact('data/processed/dataset_metadata.json', artifact_path="metadata")
+        # Log model
+        mlflow.sklearn.log_model(
+            sk_model=model,
+            name="model",
+            skops_trusted_types=["sklearn.tree._tree.Tree"]
+        
+        )
 
-        # 8. Log Model Artifact
-        mlflow.sklearn.log_model(sk_model=model, name="model")
+        # Local model backup
+        os.makedirs("models", exist_ok=True)
 
-        # Save local backup
-        joblib.dump(model, 'models/random_forest_model.pkl')
-        print(f"Run '{run_name}' successfully tracked!")
+        joblib.dump(
+            model,
+            "models/random_forest_model.pkl"
+        )
 
-# run3
-from sklearn.linear_model import LogisticRegression
+        print(
+            f"[SUCCESS] Run '{run_name}' successfully tracked!"
+        )
+
 
 if __name__ == "__main__":
-    # Baseline Run1
-    train_and_track(run_name="RandomForest")
 
-    # run2
-    # tuned_params = {
-    #     "n_estimators": 200,
-    #     "max_depth": 5, 
-    #     "random_state": 42,
-    #     "class_weight": "balanced"
-    # }
-    
-    # train_and_track(run_name="RandomForest_Shallow", params=tuned_params)
+    # Baseline Random Forest
+    train_and_track(
+        run_name="RandomForest_Baseline"
+    )
 
-    # run3
-    # print("\n--- Starting MLflow Run: LogisticRegression_Baseline ---")
-    
-    # X_train = np.load('data/processed/X_train_final.npy')
-    # X_test = np.load('data/processed/X_test_final.npy')
-    # y_train = np.load('data/processed/y_train.npy')
-    # y_test = np.load('data/processed/y_test.npy')
+    # Second experiment
+    tuned_params = {
+        "n_estimators": 200,
+        "max_depth": 15,
+        "random_state": 42,
+        "n_jobs": -1
+    }
 
-    # mlflow.set_experiment("Telco_Churn_Prediction")
-
-    # with mlflow.start_run(run_name="LogisticRegression_Baseline"):
-        
-    #     # 1. Log Parameters for Logistic Regression
-    #     params = {"C": 1.0, "max_iter": 1000, "class_weight": "balanced"}
-    #     mlflow.log_params(params)
-    #     mlflow.log_param("model_family", "LogisticRegression")
-        
-    #     # 2. Train Model
-    #     model = LogisticRegression(**params)
-    #     model.fit(X_train, y_train)
-        
-    #     # 3. Evaluate Predictions
-    #     y_pred = model.predict(X_test)
-    #     y_prob = model.predict_proba(X_test)[:, 1]
-        
-    #     metrics = {
-    #         "accuracy": accuracy_score(y_test, y_pred),
-    #         "precision": precision_score(y_test, y_pred),
-    #         "recall": recall_score(y_test, y_pred),
-    #         "f1_score": f1_score(y_test, y_pred),
-    #         "roc_auc": roc_auc_score(y_test, y_prob)
-    #     }
-        
-    #     mlflow.log_metrics(metrics)
-    #     mlflow.sklearn.log_model(sk_model=model, name="model")
-        
-    #     print(f"Metrics logged: F1 = {metrics['f1_score']:.4f} | ROC-AUC = {metrics['roc_auc']:.4f}")
+    train_and_track(
+        run_name="RandomForest_Tuned",
+        params=tuned_params
+    )
