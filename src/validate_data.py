@@ -5,42 +5,34 @@ from pandera import Column, Check
 
 
 def get_walmart_schema():
-    """Defines the schema specification for the Walmart dataset."""
-
+    """Defines the strict schema specification for the Walmart dataset."""
     return pa.DataFrameSchema({
         "Store": Column(
             pa.Int,
             Check.ge(1)
         ),
-
         "Date": Column(
             pa.String
         ),
-
         "Weekly_Sales": Column(
             pa.Float,
             Check.ge(0.0)
         ),
-
         "Holiday_Flag": Column(
             pa.Int,
             Check.isin([0, 1])
         ),
-
         "Temperature": Column(
             pa.Float
         ),
-
         "Fuel_Price": Column(
             pa.Float,
             Check.ge(0.0)
         ),
-
         "CPI": Column(
             pa.Float,
             Check.ge(0.0)
         ),
-
         "Unemployment": Column(
             pa.Float,
             Check.ge(0.0)
@@ -52,30 +44,23 @@ def validate_schema(
     df,
     output_report_name="schema_validation_errors.csv"
 ):
-    """Validates the Walmart DataFrame against the defined schema."""
+    """Validates the input DataFrame against the defined schema."""
 
-    print(
-        f"[INFO] Validating Walmart schema "
-        f"(Records: {len(df)})..."
-    )
-
+    print(f"[INFO] Validating schema (Records: {len(df)})...")
     schema = get_walmart_schema()
 
     try:
         schema.validate(df, lazy=True)
-
         print(
             "[SUCCESS] Schema Validation PASSED. "
-            "Walmart dataset is clean."
+            "Dataset is clean."
         )
-
         return True
 
     except pa.errors.SchemaErrors as err:
-
         print(
             "[ERROR] Schema Validation FAILED. "
-            "Dataset issues detected."
+            "Corruptions detected."
         )
 
         failures = err.failure_cases[
@@ -103,28 +88,25 @@ def validate_schema(
         )
 
         print(
-            f"[INFO] Detailed failure report saved to "
-            f"'{report_path}'."
+            f"[INFO] Detailed failure report saved "
+            f"to '{report_path}'."
         )
 
         return False
 
 
 if __name__ == "__main__":
-
+    # When run directly, it only validates the clean production data
     data_path = "data/raw/Walmart.csv"
 
     if os.path.exists(data_path):
-
         raw_df = pd.read_csv(data_path)
 
         validate_schema(
             raw_df,
-            output_report_name="walmart_baseline_validation.csv"
+            output_report_name="baseline_validation.csv"
         )
-
     else:
-
         print(
             f"[ERROR] Target file not found at: {data_path}"
         )

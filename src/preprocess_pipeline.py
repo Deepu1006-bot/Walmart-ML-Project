@@ -93,7 +93,7 @@ def preprocess_data():
     }
 
     with open(
-        f"{PROCESSED_DIR}/preprocessing_metadata.json",
+        f"{PROCESSED_DIR}/dataset_metadata.json",
         "w"
     ) as file:
         json.dump(metadata, file, indent=4)

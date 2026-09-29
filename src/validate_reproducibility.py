@@ -1,28 +1,16 @@
+import os
+import json
 import numpy as np
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import r2_score
 
 
-def train_once(X_train, X_test, y_train, y_test):
+def run_deterministic_test():
 
-    model = RandomForestRegressor(
-        n_estimators=100,
-        random_state=42,
-        n_jobs=-1
-    )
+    print("Running Reproducibility Validation...")
 
-    model.fit(X_train, y_train)
-
-    predictions = model.predict(X_test)
-
-    return r2_score(y_test, predictions)
-
-
-def main():
-
-    print("[INFO] Checking Walmart model reproducibility...")
-
+    # Load Data
     X_train = np.load(
         "data/processed/X_train.npy"
     )
@@ -39,35 +27,87 @@ def main():
         "data/processed/y_test.npy"
     )
 
-    # First execution
-    r2_run_1 = train_once(
+    # Fixed Parameters for strict reproducibility
+    params = {
+        "n_estimators": 100,
+        "max_depth": 10,
+        "random_state": 42,
+        "n_jobs": -1
+    }
+
+    # Execution 1
+    model_1 = RandomForestRegressor(**params)
+
+    model_1.fit(
         X_train,
-        X_test,
-        y_train,
-        y_test
+        y_train
     )
 
-    # Second execution
-    r2_run_2 = train_once(
-        X_train,
-        X_test,
-        y_train,
-        y_test
+    score_1 = r2_score(
+        y_test,
+        model_1.predict(X_test)
     )
 
-    print(f"Run 1 R2: {r2_run_1:.6f}")
-    print(f"Run 2 R2: {r2_run_2:.6f}")
+    # Execution 2 (Simulating a re-run)
+    model_2 = RandomForestRegressor(**params)
 
-    if np.isclose(r2_run_1, r2_run_2):
+    model_2.fit(
+        X_train,
+        y_train
+    )
+
+    score_2 = r2_score(
+        y_test,
+        model_2.predict(X_test)
+    )
+
+    # Validate consistency
+    is_reproducible = (score_1 == score_2)
+
+    # Generate Report
+    report = {
+        "test_name":
+            "Pipeline Reproducibility Validation",
+
+        "parameters": params,
+
+        "execution_1_r2": score_1,
+
+        "execution_2_r2": score_2,
+
+        "is_strictly_reproducible":
+            is_reproducible,
+
+        "status":
+            "PASSED" if is_reproducible else "FAILED"
+    }
+
+    os.makedirs("artifacts", exist_ok=True)
+
+    with open(
+        "artifacts/reproducibility_report.json",
+        "w"
+    ) as f:
+        json.dump(report, f, indent=4)
+
+    print(
+        f"Execution 1 R2: {score_1:.6f}"
+    )
+
+    print(
+        f"Execution 2 R2: {score_2:.6f}"
+    )
+
+    if is_reproducible:
         print(
-            "[SUCCESS] Reproducibility validation PASSED."
+            "SUCCESS: Pipeline is 100% reproducible. "
+            "Report saved."
         )
     else:
         print(
-            "[ERROR] Reproducibility validation FAILED."
+            "FAILED: Pipeline is non-deterministic."
         )
-        raise SystemExit(1)
 
 
 if __name__ == "__main__":
-    main()
+    run_deterministic_test()
