@@ -14,9 +14,24 @@ from sklearn.metrics import (
 )
 
 
+FEATURE_NAMES = [
+    "Store",
+    "Holiday_Flag",
+    "Temperature",
+    "Fuel_Price",
+    "CPI",
+    "Unemployment",
+    "Year",
+    "Month",
+    "Week",
+    "Quarter"
+]
+
+
 def train_and_track(
     run_name="RandomForest_Baseline",
-    params=None
+    params=None,
+    selected_features=None
 ):
 
     if params is None:
@@ -48,6 +63,17 @@ def train_and_track(
         "data/processed/y_test.npy"
     )
 
+    # Feature Selection
+    if selected_features is not None:
+
+        selected_indices = [
+            FEATURE_NAMES.index(feature)
+            for feature in selected_features
+        ]
+
+        X_train = X_train[:, selected_indices]
+        X_test = X_test[:, selected_indices]
+
     # Set Experiment
     mlflow.set_experiment(
         "Walmart_Weekly_Sales_Prediction"
@@ -59,10 +85,35 @@ def train_and_track(
 
         # 2. Log Parameters
         mlflow.log_params(params)
+
         mlflow.log_param(
             "model_family",
             "RandomForestRegressor"
         )
+
+        if selected_features is not None:
+
+            mlflow.log_param(
+                "feature_selection",
+                "RandomForest_Feature_Importance"
+            )
+
+            mlflow.log_param(
+                "selected_feature_count",
+                len(selected_features)
+            )
+
+            mlflow.log_param(
+                "selected_features",
+                ",".join(selected_features)
+            )
+
+        else:
+
+            mlflow.log_param(
+                "feature_selection",
+                "None"
+            )
 
         # 3. Train Model
         model = RandomForestRegressor(
@@ -97,8 +148,10 @@ def train_and_track(
             )
         }
 
-        # 5. Log Metrics to MLflow
-        mlflow.log_metrics(metrics)
+        # 5. Log Metrics
+        mlflow.log_metrics(
+            metrics
+        )
 
         print(
             f"Metrics logged: "
@@ -135,7 +188,7 @@ def train_and_track(
         )
 
         plot_path = (
-            "artifacts/actual_vs_predicted.png"
+            f"artifacts/{run_name}_actual_vs_predicted.png"
         )
 
         fig.savefig(
@@ -150,12 +203,13 @@ def train_and_track(
             artifact_path="plots"
         )
 
-        # 7. Log Preprocessing Metadata for Lineage
+        # 7. Log Preprocessing Metadata
         metadata_path = (
             "data/processed/dataset_metadata.json"
         )
 
         if os.path.exists(metadata_path):
+
             mlflow.log_artifact(
                 metadata_path,
                 artifact_path="metadata"
@@ -170,7 +224,7 @@ def train_and_track(
             ]
         )
 
-        # Save local backup
+        # 9. Save Local Backup
         os.makedirs(
             "models",
             exist_ok=True
@@ -178,7 +232,7 @@ def train_and_track(
 
         joblib.dump(
             model,
-            "models/random_forest_model.pkl"
+            f"models/{run_name}_model.pkl"
         )
 
         print(
@@ -204,4 +258,18 @@ if __name__ == "__main__":
     train_and_track(
         run_name="RandomForest_Tuned",
         params=tuned_params
+    )
+
+    # Feature Selection Run
+    selected_features = [
+        "Store",
+        "CPI",
+        "Unemployment",
+        "Week"
+    ]
+
+    train_and_track(
+        run_name="RandomForest_Feature_Selected",
+        params=tuned_params,
+        selected_features=selected_features
     )
