@@ -289,6 +289,8 @@ GitHub Repository	Completed
 
 This experiment demonstrates branch creation, commit history, merging, rollback, revert, and version traceability for the Walmart ML project.  
 
+Collaborative workflow: Walmart Branch A update.
+
 Conclusion
 
 The Walmart ML Project demonstrates an end-to-end Machine Learning and MLOps workflow.
