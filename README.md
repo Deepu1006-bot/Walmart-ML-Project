@@ -283,6 +283,12 @@ Lab 4 — MLflow Experiment Tracking	Completed
 Lab 5 — Production Data Pipeline	Completed
 Lab 6 — Model Registry & Lifecycle	Completed
 GitHub Repository	Completed
+
+
+## Experiment 3 - Git Version Control
+
+This experiment demonstrates branch creation, commit history, merging, rollback, revert, and version traceability for the Walmart ML project.  
+
 Conclusion
 
 The Walmart ML Project demonstrates an end-to-end Machine Learning and MLOps workflow.
