@@ -1,19 +1,15 @@
-﻿name: Walmart Lab 8 - CI Pipeline
+﻿
+name: Walmart Lab 9 - Failure Handling
 
 on:
   push:
     branches: [master, main]
-    paths:
-      - "src/mlops_pipeline/**"
-      - "tests/**"
-      - "data/raw/Walmart.csv"
-      - ".github/workflows/lab8_ci.yml"
   pull_request:
     branches: [master, main]
   workflow_dispatch:
 
 jobs:
-  validate-and-test:
+  failure-handling-tests:
     runs-on: ubuntu-latest
 
     steps:
@@ -24,37 +20,31 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy scikit-learn joblib mlflow pytest
+          pip install -r requirements.txt
+          pip install pytest
 
       - name: Validate Walmart dataset
         run: python src/mlops_pipeline/01_load_data.py
 
-      - name: Validate dataset quality
-        run: python src/mlops_pipeline/02_validate_data.py
+      - name: Run failure-handling tests
+        run: python -m pytest tests/test_failure_handling.py tests/test_data_validation.py -v
 
-      - name: Preprocess Walmart dataset
-        run: python src/mlops_pipeline/03_preprocess_data.py
+      - name: Run failure injection checks
+        run: python src/mlops_pipeline/10_failure_injection.py
 
-      - name: Train Random Forest model
-        run: python src/mlops_pipeline/04_train_model.py
-
-      - name: Evaluate model
-        run: python src/mlops_pipeline/05_evaluate_model.py
-
-      - name: Run inference
-        run: python src/mlops_pipeline/06_inference.py
-
-      - name: Run automated tests
-        run: python -m pytest tests -v
-
-      - name: Upload Lab 7 artifacts
+      - name: Upload failure-handling reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: walmart-lab8-ci-results
-          path: artifacts/lab7/
+          name: walmart-lab9-failure-reports
+          path: |
+            reports/
+            logs/
           if-no-files-found: warn
+          retention-days: 7
