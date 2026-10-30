@@ -1,0 +1,60 @@
+﻿name: Walmart Lab 8 - CI Pipeline
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "src/mlops_pipeline/**"
+      - "tests/**"
+      - "data/raw/Walmart.csv"
+      - ".github/workflows/lab8_ci.yml"
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  validate-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas numpy scikit-learn joblib mlflow pytest
+
+      - name: Validate Walmart dataset
+        run: python src/mlops_pipeline/01_load_data.py
+
+      - name: Validate dataset quality
+        run: python src/mlops_pipeline/02_validate_data.py
+
+      - name: Preprocess Walmart dataset
+        run: python src/mlops_pipeline/03_preprocess_data.py
+
+      - name: Train Random Forest model
+        run: python src/mlops_pipeline/04_train_model.py
+
+      - name: Evaluate model
+        run: python src/mlops_pipeline/05_evaluate_model.py
+
+      - name: Run inference
+        run: python src/mlops_pipeline/06_inference.py
+
+      - name: Run automated tests
+        run: python -m pytest tests -v
+
+      - name: Upload Lab 7 artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: walmart-lab8-ci-results
+          path: artifacts/lab7/
+          if-no-files-found: warn
