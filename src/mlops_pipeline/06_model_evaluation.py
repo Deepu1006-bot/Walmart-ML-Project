@@ -30,10 +30,10 @@ def main():
 
         data_dir = PROJECT_ROOT / "data" / "processed"
 
-        X_train = np.load(data_dir / "X_train.npy")
-        X_test = np.load(data_dir / "X_test.npy")
-        y_train = np.load(data_dir / "y_train.npy")
-        y_test = np.load(data_dir / "y_test.npy")
+        X_train = np.load(data_dir / "lab7_X_train.npy")
+        X_test = np.load(data_dir / "lab7_X_test.npy")
+        y_train = np.load(data_dir / "lab7_y_train.npy")
+        y_test = np.load(data_dir / "lab7_y_test.npy")
 
         model = RandomForestRegressor(
             n_estimators=200,
