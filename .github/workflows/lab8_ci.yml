@@ -1,5 +1,5 @@
 ﻿
-name: Walmart Lab 9 - Failure Handling
+name: Walmart Lab 8 - CI Pipeline
 
 on:
   push:
@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  failure-handling-tests:
+  validate-and-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,19 +32,37 @@ jobs:
       - name: Validate Walmart dataset
         run: python src/mlops_pipeline/01_load_data.py
 
-      - name: Run failure-handling tests
-        run: python -m pytest tests/test_failure_handling.py tests/test_data_validation.py -v
+      - name: Validate dataset quality
+        run: python src/mlops_pipeline/02_validate_data.py
 
-      - name: Run failure injection checks
-        run: python src/mlops_pipeline/10_failure_injection.py
+      - name: Preprocess Walmart dataset
+        run: python src/mlops_pipeline/03_preprocess_data.py
 
-      - name: Upload failure-handling reports
+      - name: Validate preprocessed outputs
+        run: python src/mlops_pipeline/04_validate_outputs.py
+
+      - name: Train Random Forest model
+        run: python src/mlops_pipeline/05_train_registry.py
+
+      - name: Evaluate model
+        run: python src/mlops_pipeline/06_model_evaluation.py
+
+      - name: Run model quality gate
+        run: python src/mlops_pipeline/07_quality_gate.py
+
+      - name: Run inference
+        run: python src/mlops_pipeline/09_inference.py
+
+      - name: Run automated tests
+        run: python -m pytest tests/ -v
+
+      - name: Upload Lab 7 artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: walmart-lab9-failure-reports
+          name: walmart-lab7-artifacts
           path: |
-            reports/
-            logs/
+            artifacts/lab7/
+            data/processed/lab7_metadata.json
           if-no-files-found: warn
           retention-days: 7
