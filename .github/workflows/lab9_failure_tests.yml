@@ -1,12 +1,9 @@
-﻿name: Walmart Lab 9 - Failure Handling
+﻿
+name: Walmart Lab 9 - Failure Handling
 
 on:
   push:
     branches: [master, main]
-    paths:
-      - "src/mlops_pipeline/**"
-      - "tests/**"
-      - ".github/workflows/lab9_failure_tests.yml"
   pull_request:
     branches: [master, main]
   workflow_dispatch:
@@ -23,11 +20,14 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: requirements.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pandas numpy scikit-learn joblib pytest
+          pip install -r requirements.txt
+          pip install pytest
 
       - name: Validate source dataset
         run: python src/mlops_pipeline/01_load_data.py
@@ -35,5 +35,45 @@ jobs:
       - name: Run data validation
         run: python src/mlops_pipeline/02_validate_data.py
 
-      - name: Run failure-handling and pipeline tests
-        run: python -m pytest tests -v
+      - name: Preprocess Walmart dataset
+        run: python src/mlops_pipeline/03_preprocess_data.py
+
+      - name: Validate preprocessed outputs
+        run: python src/mlops_pipeline/04_validate_outputs.py
+
+      - name: Train and register model
+        run: python src/mlops_pipeline/05_train_registry.py
+
+      - name: Evaluate model
+        run: python src/mlops_pipeline/06_model_evaluation.py
+
+      - name: Run model quality gate
+        run: python src/mlops_pipeline/07_quality_gate.py
+
+      - name: Run inference
+        run: python src/mlops_pipeline/09_inference.py
+
+      - name: Run data validation tests
+        run: python -m pytest tests/test_data_validation.py -v
+
+      - name: Run failure handling tests
+        run: python -m pytest tests/test_failure_handling.py -v
+
+      - name: Run pipeline tests
+        run: python -m pytest tests/test_pipeline.py -v
+
+      - name: Run failure injection checks
+        run: python src/mlops_pipeline/10_failure_injection.py
+
+      - name: Upload Lab 9 reports and artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: walmart-lab9-reports
+          path: |
+            artifacts/lab7/
+            reports/
+            logs/
+            data/processed/lab7_metadata.json
+          if-no-files-found: warn
+          retention-days: 7
