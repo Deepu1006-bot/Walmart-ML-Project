@@ -18,7 +18,8 @@ spec.loader.exec_module(validate_module)
 validate_data = validate_module.validate_data
 load_data = validate_module.load_data
 
-OUTPUT_DIR = Path("data/processed")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+OUTPUT_DIR = PROJECT_ROOT / "data" / "processed"
 
 FEATURES = [
     "Store", "Holiday_Flag", "Temperature", "Fuel_Price",
