@@ -1,5 +1,4 @@
-﻿
-name: Walmart Lab 8 - CI Pipeline
+﻿name: Walmart Lab 8 - CI Pipeline
 
 on:
   push:
@@ -21,13 +20,16 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
-          cache-dependency-path: requirements.txt
+          cache-dependency-path: |
+            requirements.txt
+            requirements-api.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+          python -m pip install -r requirements.txt
+          python -m pip install -r requirements-api.txt
+          python -m pip install pytest
 
       - name: Validate Walmart dataset
         run: python src/mlops_pipeline/01_load_data.py
