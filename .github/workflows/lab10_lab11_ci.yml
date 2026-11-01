@@ -10,7 +10,7 @@ on:
 
 jobs:
   api-tests:
-    name: Lab 10 - FastAPI Tests
+    name: Lab 10 - FastAPI and Project Tests
     runs-on: ubuntu-latest
 
     steps:
@@ -21,11 +21,36 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-api.txt
 
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
+          pip install -r requirements.txt
           pip install -r requirements-api.txt
+
+      - name: Run data loading and validation
+        run: |
+          python src/mlops_pipeline/01_load_data.py
+          python src/mlops_pipeline/02_validate_data.py
+
+      - name: Preprocess dataset
+        run: python src/mlops_pipeline/03_preprocess_data.py
+
+      - name: Validate preprocessed data
+        run: python src/mlops_pipeline/04_validate_outputs.py
+
+      - name: Train model and generate artifacts
+        run: python src/mlops_pipeline/05_train_registry.py
+
+      - name: Evaluate model
+        run: python src/mlops_pipeline/06_model_evaluation.py
+
+      - name: Run model quality gate
+        run: python src/mlops_pipeline/07_quality_gate.py
 
       - name: Verify model artifacts
         run: |
@@ -35,13 +60,15 @@ jobs:
       - name: Run API and project tests
         run: python -m pytest tests/ -v
 
-      - name: Upload test report artifacts
+      - name: Upload Lab 10-11 test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: lab10-lab11-test-results
+          name: lab10-lab11-test-artifacts
           path: |
             artifacts/lab11/container_validation_report.json
+            artifacts/lab7/
+            data/processed/lab7_metadata.json
           if-no-files-found: ignore
           retention-days: 7
 
