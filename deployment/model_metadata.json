@@ -1,0 +1,19 @@
+{
+    "project": "Walmart Weekly Sales Prediction",
+    "experiment": "Lab 13 - End-to-End MLOps System Mini Project",
+    "model": "RandomForestRegressor",
+    "target": "Weekly_Sales",
+    "problem_type": "Regression",
+    "model_file": "walmart_retrained_model.pkl",
+    "features": [
+        "Store",
+        "Holiday_Flag",
+        "Temperature",
+        "Fuel_Price",
+        "CPI",
+        "Unemployment",
+        "Year",
+        "Month",
+        "Week"
+    ]
+}
