@@ -7,7 +7,6 @@ RUN pip install --no-cache-dir -r requirements-api.txt
 
 COPY api ./api
 COPY deployment ./deployment
-COPY outputs ./outputs
 
 RUN mkdir -p outputs/api
 
