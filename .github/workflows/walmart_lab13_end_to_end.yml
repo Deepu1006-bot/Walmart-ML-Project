@@ -25,7 +25,7 @@ jobs:
           pip install -r requirements-api.txt
 
       - name: Run API tests
-        run: pytest -v
+        run: pytest tests/test_walmart_api.py -v --tb=short
 
       - name: Build Docker image
         run: docker build -t walmart-ml-api:latest .
