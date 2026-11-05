@@ -1,23 +1,20 @@
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: walmart-ml-api
-  labels:
-    app: walmart-ml-api
+  name: walmart-ml-deployment
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: walmart-ml-api
+      app: walmart-ml
   template:
     metadata:
       labels:
-        app: walmart-ml-api
+        app: walmart-ml
     spec:
       containers:
         - name: walmart-ml-api
-          image: walmart-ml-api:lab11
+          image: walmart-ml-api:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
@@ -31,12 +28,5 @@ spec:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 20
+            initialDelaySeconds: 15
             periodSeconds: 20
-          resources:
-            requests:
-              cpu: "100m"
-              memory: "256Mi"
-            limits:
-              cpu: "1000m"
-              memory: "1Gi"

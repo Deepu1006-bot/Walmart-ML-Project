@@ -1,39 +1,19 @@
-
-import json
-import logging
 from pathlib import Path
+import json
 from datetime import datetime, timezone
 
-ROOT_DIR = Path(__file__).resolve().parent.parent
-LOG_DIR = ROOT_DIR / "logs" / "api"
+ROOT = Path(__file__).resolve().parents[1]
+LOG_DIR = ROOT / "outputs" / "api"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
+LOG_FILE = LOG_DIR / "prediction_logs.jsonl"
 
-LOG_FILE = LOG_DIR / "api.log"
-
-logger = logging.getLogger("walmart_api")
-logger.setLevel(logging.INFO)
-
-if not logger.handlers:
-    formatter = logging.Formatter(
-        "%(asctime)s | %(levelname)s | %(message)s"
-    )
-
-    file_handler = logging.FileHandler(LOG_FILE, encoding="utf-8")
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-
-    console_handler = logging.StreamHandler()
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
-
-def log_request(endpoint: str, status: str, latency_ms: float, details=None):
+def log_prediction(input_data, prediction, latency_ms):
     record = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "endpoint": endpoint,
-        "status": status,
-        "latency_ms": round(latency_ms, 3),
-        "details": details or {},
+        "input": input_data,
+        "prediction": float(prediction),
+        "latency_ms": float(latency_ms),
+        "status": "success"
     }
-
-    logger.info(json.dumps(record, default=str))
+    with open(LOG_FILE, "a", encoding="utf-8") as file:
+        file.write(json.dumps(record) + "\n")

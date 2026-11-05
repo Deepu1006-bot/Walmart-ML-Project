@@ -1,0 +1,22 @@
+﻿project:
+  name: Walmart-ML-Project
+  target: Weekly_Sales
+  random_state: 42
+
+data:
+  raw_path: data/raw/Walmart.csv
+  processed_path: data/processed
+  target_column: Weekly_Sales
+
+model:
+  type: RandomForestRegressor
+  n_estimators: 200
+  max_depth: 15
+  random_state: 42
+
+evaluation:
+  minimum_r2: 0.80
+
+mlflow:
+  experiment_name: Walmart_Weekly_Sales_Prediction
+  registered_model_name: Walmart_Weekly_Sales_Production_Model
